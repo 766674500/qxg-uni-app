@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getHomeBannerAPI } from '@/services/home'
+import { getHomeBannerAPI, getHomeCategoryAPI } from '@/services/home'
 import type { BannerItem } from '@/types/home'
 import { onLoad } from '@dcloudio/uni-app'
 import { ref } from 'vue'
@@ -11,9 +11,14 @@ const getHomeBannerData = async () => {
   const res = await getHomeBannerAPI()
   bannerList.value = res.result
 }
+const getHomeCategoryData = async () => {
+  const res = await getHomeCategoryAPI()
+  // bannerList.value = res.result
+}
 
 onLoad(() => {
   getHomeBannerData()
+  getHomeCategoryData()
 })
 </script>
 
