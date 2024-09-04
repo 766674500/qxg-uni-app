@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { getMemberProfileAPI } from '@/services/profile'
-import type { ProfileDetail } from '@/types/member'
+import { getMemberProfileAPI, putMemberProfileAPI } from '@/services/profile'
+import type { Gender, ProfileDetail } from '@/types/member'
 import { onLoad } from '@dcloudio/uni-app'
 import { ref } from 'vue'
+import { useMemberStore } from '@/stores'
 
 // 获取屏幕边界到安全区域距离
 const { safeAreaInsets } = uni.getSystemInfoSync()
 
-// 获取个人信息
-const profile = ref<ProfileDetail>()
+// 获取个人信息，修改个人信息需提供初始值   // [!code ++]
+const profile = ref({} as ProfileDetail) // [!code ++]
+
 const getMemberProfileData = async () => {
   const res = await getMemberProfileAPI()
   profile.value = res.result
@@ -38,7 +40,7 @@ const onAvatarChange = () => {
             // 当前页面更新头像
             profile.value!.avatar = avatar // [!code ++]
             // 更新 Store 头像
-            // memberStore.profile!.avatar = avatar // [!code ++]
+            memberStore.profile!.avatar = avatar // [!code ++]
             uni.showToast({ icon: 'success', title: '更新成功' })
           } else {
             uni.showToast({ icon: 'error', title: '出现错误' })
@@ -47,6 +49,48 @@ const onAvatarChange = () => {
       })
     },
   })
+}
+
+// 修改性别
+const onGenderChange: UniHelper.RadioGroupOnChange = (ev) => {
+  profile.value.gender = ev.detail.value as Gender
+}
+
+// 修改生日
+const onBirthdayChange: UniHelper.DatePickerOnChange = (ev) => {
+  profile.value.birthday = ev.detail.value
+}
+
+// 修改城市
+let fullLocationCode: [string, string, string] = ['', '', '']
+const onFullLocationChange: UniHelper.RegionPickerOnChange = (ev) => {
+  // 修改前端界面
+  profile.value.fullLocation = ev.detail.value.join(' ')
+  // 提交后端更新
+  fullLocationCode = ev.detail.code!
+}
+
+// 点击保存提交表单
+const memberStore = useMemberStore()
+
+// 点击保存提交表单
+const onSubmit = async () => {
+  const { nickname, gender, birthday, profession } = profile.value
+  const res = await putMemberProfileAPI({
+    nickname,
+    gender,
+    birthday,
+    profession,
+    provinceCode: fullLocationCode[0],
+    cityCode: fullLocationCode[1],
+    countyCode: fullLocationCode[2],
+  })
+  // 更新Store昵称
+  memberStore.profile!.nickname = res.result.nickname
+  uni.showToast({ icon: 'success', title: '保存成功' })
+  setTimeout(() => {
+    uni.navigateBack()
+  }, 400)
 }
 
 onLoad(() => {
@@ -78,11 +122,11 @@ onLoad(() => {
         </view>
         <view class="form-item">
           <text class="label">昵称</text>
-          <input class="input" type="text" placeholder="请填写昵称" :value="profile?.nickname" />
+          <input class="input" type="text" placeholder="请填写昵称" v-model="profile.nickname" />
         </view>
         <view class="form-item">
           <text class="label">性别</text>
-          <radio-group>
+          <radio-group @change="onGenderChange">
             <label class="radio">
               <radio value="男" color="#27ba9b" :checked="profile?.gender === '男'" />
               男
@@ -101,6 +145,7 @@ onLoad(() => {
             :value="profile?.birthday"
             start="1900-01-01"
             :end="new Date()"
+            @change="onBirthdayChange"
           >
             <view v-if="profile?.birthday">{{ profile?.birthday }}</view>
             <view class="placeholder" v-else>请选择日期</view>
@@ -108,18 +153,23 @@ onLoad(() => {
         </view>
         <view class="form-item">
           <text class="label">城市</text>
-          <picker class="picker" :value="profile?.fullLocation?.split(' ')" mode="region">
+          <picker
+            class="picker"
+            :value="profile?.fullLocation?.split(' ')"
+            @change="onFullLocationChange"
+            mode="region"
+          >
             <view v-if="profile?.fullLocation">{{ profile.fullLocation }}</view>
             <view class="placeholder" v-else>请选择城市</view>
           </picker>
         </view>
         <view class="form-item">
           <text class="label">职业</text>
-          <input class="input" type="text" placeholder="请填写职业" :value="profile?.profession" />
+          <input class="input" type="text" placeholder="请填写职业" v-model="profile.profession" />
         </view>
       </view>
       <!-- 提交按钮 -->
-      <button class="form-button">保 存</button>
+      <button class="form-button" @tap="onSubmit">保 存</button>
     </view>
   </view>
 </template>
