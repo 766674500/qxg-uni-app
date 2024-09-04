@@ -37,7 +37,50 @@ const { guessRef, onScrolltolower } = useGuessList() // [!code ++]
         </view>
       </view>
       <!-- 情况2：未登录 -->
-      <view class="overview" v-else> ...省略 </view>
+      <view class="overview" v-else>
+        <navigator url="/pages/login/login" hover-class="none">
+          <image
+            class="avatar gray"
+            mode="aspectFill"
+            src="http://yjy-xiaotuxian-dev.oss-cn-beijing.aliyuncs.com/picture/2021-04-06/db628d42-88a7-46e7-abb8-659448c33081.png"
+          ></image>
+        </navigator>
+        <view class="meta">
+          <navigator url="/pages/login/login" hover-class="none" class="nickname">
+            未登录
+          </navigator>
+          <view class="extra">
+            <text class="tips">点击登录账号</text>
+          </view>
+        </view>
+      </view>
+      <navigator class="settings" url="/pagesMember/settings/settings" hover-class="none">
+        设置
+      </navigator>
+    </view>
+    <!-- 我的订单 -->
+    <view class="orders">
+      <view class="title">
+        我的订单
+        <navigator class="navigator" url="/pagesOrder/list/list?type=0" hover-class="none">
+          查看全部订单<text class="icon-right"></text>
+        </navigator>
+      </view>
+      <view class="section">
+        <!-- 订单 -->
+        <navigator
+          v-for="item in orderTypes"
+          :key="item.type"
+          :class="item.icon"
+          :url="`/pagesOrder/list/list?type=${item.type}`"
+          class="navigator"
+          hover-class="none"
+        >
+          {{ item.text }}
+        </navigator>
+        <!-- 客服 -->
+        <button class="contact icon-handset" open-type="contact">售后</button>
+      </view>
     </view>
     <!-- 猜你喜欢 -->
     <view class="guess">
