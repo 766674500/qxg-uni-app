@@ -2,8 +2,13 @@
 import { useGuessList } from '@/composables'
 import { ref } from 'vue'
 import { onReady, onLoad } from '@dcloudio/uni-app'
-import type { OrderResult } from '@/types/order'
-import { getMemberOrderByIdAPI } from '@/services/order'
+import type { OrderResult, OrderPreResult } from '@/types/order'
+import {
+  getMemberOrderByIdAPI,
+  getMemberOrderPreNowAPI,
+  getMemberOrderRepurchaseByIdAPI,
+  getMemberOrderPreAPI,
+} from '@/services/order'
 import { OrderState, orderStateList } from '@/services/constants'
 
 // 获取屏幕边界到安全区域距离
@@ -31,6 +36,9 @@ const onCopy = (id: string) => {
 // 获取页面参数
 const query = defineProps<{
   id: string
+  skuId?: string
+  count?: string
+  orderId?: string // [!code ++]
 }>()
 
 // 获取页面栈
@@ -75,6 +83,33 @@ const getMemberOrderByIdData = async () => {
   order.value = res.result
 }
 
+// 获取订单信息
+const orderPre = ref<OrderPreResult>()
+const getMemberOrderPreData = async () => {
+  if (query.count && query.skuId) {
+    // 立即购买
+    const res = await getMemberOrderPreNowAPI({
+      count: query.count,
+      skuId: query.skuId,
+    })
+    orderPre.value = res.result
+  } else if (query.orderId) {
+    // 再次购买
+    const res = await getMemberOrderRepurchaseByIdAPI(query.orderId)
+    orderPre.value = res.result
+  } else {
+    // 预付订单
+    const res = await getMemberOrderPreAPI()
+    orderPre.value = res.result
+  }
+}
+
+// 倒计时结束事件
+const onTimeup = () => {
+  // 修改订单状态为已取消
+  order.value!.orderState = OrderState.YiQuXiao
+}
+
 onLoad(() => {
   getMemberOrderByIdData()
 })
@@ -104,7 +139,15 @@ onLoad(() => {
           <view class="tips">
             <text class="money">应付金额: ¥ 99.00</text>
             <text class="time">支付剩余</text>
-            00 时 29 分 59 秒
+            <!-- 倒计时组件 -->
+            <uni-countdown
+              :second="order.countdown"
+              color="#fff"
+              splitor-color="#fff"
+              :show-day="false"
+              :show-colon="false"
+              @timeup="onTimeup"
+            />
           </view>
           <view class="button">去支付</view>
         </template>
