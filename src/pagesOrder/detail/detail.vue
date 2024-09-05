@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { useGuessList } from '@/composables'
 import { ref } from 'vue'
-import { onReady } from '@dcloudio/uni-app'
+import { onReady, onLoad } from '@dcloudio/uni-app'
+import type { OrderResult } from '@/types/order'
+import { getMemberOrderByIdAPI } from '@/services/order'
+import { OrderState, orderStateList } from '@/services/constants'
 
 // 获取屏幕边界到安全区域距离
 const { safeAreaInsets } = uni.getSystemInfoSync()
@@ -64,6 +67,17 @@ onReady(() => {
     endScrollOffset: 50,
   })
 })
+
+// 获取订单详情
+const order = ref<OrderResult>()
+const getMemberOrderByIdData = async () => {
+  const res = await getMemberOrderByIdAPI(query.id)
+  order.value = res.result
+}
+
+onLoad(() => {
+  getMemberOrderByIdData()
+})
 </script>
 
 <template>
@@ -81,11 +95,11 @@ onReady(() => {
     </view>
   </view>
   <scroll-view scroll-y class="viewport" id="scroller" @scrolltolower="onScrolltolower">
-    <template v-if="true">
+    <template v-if="order">
       <!-- 订单状态 -->
-      <view class="overview" :style="{ paddingTop: safeAreaInsets!.top + 20 + 'px' }">
+      <view class="overview">
         <!-- 待付款状态:展示去支付按钮和倒计时 -->
-        <template v-if="true">
+        <template v-if="order.orderState === OrderState.DaiFuKuan">
           <view class="status icon-clock">等待付款</view>
           <view class="tips">
             <text class="money">应付金额: ¥ 99.00</text>
@@ -97,18 +111,16 @@ onReady(() => {
         <!-- 其他订单状态:展示再次购买按钮 -->
         <template v-else>
           <!-- 订单状态文字 -->
-          <view class="status"> 待付款 </view>
-          <view class="button-group">
-            <navigator
-              class="button"
-              :url="`/pagesOrder/create/create?orderId=${query.id}`"
-              hover-class="none"
-            >
-              再次购买
-            </navigator>
-            <!-- 待发货状态：模拟发货,开发期间使用,用于修改订单状态为已发货 -->
-            <view v-if="false" class="button"> 模拟发货 </view>
-          </view>
+          <view class="status"> {{ orderStateList[order.orderState].text }} </view>
+          <navigator
+            class="button"
+            :url="`/pagesOrder/create/create?orderId=${query.id}`"
+            hover-class="none"
+          >
+            再次购买
+          </navigator>
+          <!-- 待发货状态：模拟发货,开发期间使用,用于修改订单状态为已发货 -->
+          <view v-if="false" class="button"> 模拟发货 </view>
         </template>
       </view>
       <!-- 配送状态 -->
