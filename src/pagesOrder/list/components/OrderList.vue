@@ -35,15 +35,17 @@ const onOrderPay = async (id: string) => {
     // 开发环境：模拟支付，修改订单状态为已支付
     await getPayMockAPI({ orderId: id })
   } else {
+    // #ifdef MP-WEIXIN
     // 生产环境：获取支付参数 + 发起微信支付
     const res = await getPayWxPayMiniPayAPI({ orderId: id })
     await wx.requestPayment(res.result)
+    // #endif
   }
   // 成功提示
   uni.showToast({ title: '支付成功' })
   // 更新订单状态
   const order = orderList.value.find((v) => v.id === id)
-  order.orderState = OrderState.DaiFaHuo
+  order!.orderState = OrderState.DaiFaHuo
 }
 
 onMounted(() => {
@@ -88,7 +90,7 @@ onMounted(() => {
       <view class="action">
         <!-- 待付款状态：显示去支付按钮 -->
         <template v-if="order.orderState === OrderState.DaiFuKuan">
-          <view class="button primary" @tap="($event) => onOrderPay(order.id)">去支付</view>
+          <view class="button primary" @tap="onOrderPay(order.id)">去支付</view>
         </template>
         <template v-else>
           <navigator
