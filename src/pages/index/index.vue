@@ -80,4 +80,7 @@ page {
 .scroll-view {
   flex: 1;
 }
+.carousel {
+  height: 320rpx;
+}
 </style>
